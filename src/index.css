@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Press+Start+2P&display=swap');
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-dark-surface/60 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl shadow-black/50;
+  }
+  
+  .text-glow-cyan {
+    text-shadow: 0 0 10px theme('colors.neon.cyan'), 0 0 20px theme('colors.neon.cyan');
+  }
+  
+  .text-glow-green {
+    text-shadow: 0 0 10px theme('colors.neon.green'), 0 0 20px theme('colors.neon.green');
+  }
+
+  .text-glow-pink {
+    text-shadow: 0 0 10px theme('colors.neon.pink'), 0 0 20px theme('colors.neon.pink');
+  }
+
+  .btn-neon {
+    @apply relative px-8 py-4 font-press-start text-sm md:text-base uppercase tracking-widest text-white transition-all duration-300
+    hover:scale-105 hover:bg-white/5 border-2 rounded-lg overflow-hidden;
+  }
+}
+
+body {
+  margin: 0;
+  background-color: theme('colors.dark.bg');
+  color: #ffffff;
+  font-family: theme('fontFamily.fira-code'), system-ui, sans-serif;
+  overflow: hidden;
+  background-image: radial-gradient(circle at center, rgba(57, 255, 20, 0.05) 0%, transparent 70%);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

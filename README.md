@@ -275,28 +275,4 @@ snake-game/
 **Chúc bạn chơi vui vẻ! 🐍✨**
 
 </div>
-"
--HƯỚNG DẪN CÀI ĐẶT MÔI TRƯỜNG 
-Phần này hướng dẫn các bước cần thiết để thiết lập môi trường và khởi chạy dự án Snake Game Platform từ mã nguồn.
-    +Yêu cầu hệ thống:
-               Node.js: Phiên bản 18.x trở lên (Khuyến nghị bản LTS).
-               Trình quản lý gói: npm (đi kèm khi cài Node.js) hoặc yarn.
-               Trình duyệt: Chrome, Firefox hoặc Edge phiên bản mới nhất.
-     +Các bước cài đặt:
-               Giải nén mã nguồn: Giải nén file snake-game.zip vào một thư mục trên máy tính.
-               Mở Terminal: Di chuyển vào thư mục dự án vừa giải nén : “ cd snake-game ”  .
-               Cài đặt thư viện (Dependencies): Chạy lệnh sau để tải các gói thư viện cần thiết (React, Tailwind CSS, Vite): “ npm install ’’ .
-               Khởi chạy môi trường Development: Chạy lệnh sau để bắt đầu server chạy thử: “ npm run dev ’’ .
-               Truy cập ứng dụng: Sau khi lệnh chạy thành công, mở trình duyệt và truy cập vào địa chỉ: http://localhost:5173 
--HƯỚNG DẪN DEPLOYMENT
-Dự án được cấu hình để dễ dàng triển khai lên các nền tảng Cloud hiện đại. Dưới đây là hướng dẫn triển khai lên Vercel (nền tảng tối ưu cho React/Vite).
-Các bước triển khai thủ công (Vercel CLI):
-Cài đặt Vercel CLI: npm install -g vercel.
-Tại thư mục gốc dự án, gõ lệnh: vercel.
-Đăng nhập và làm theo các bước hướng dẫn trên Terminal để hoàn tất.
-Các bước triển khai tự động (GitHub + Vercel):
-Đẩy mã nguồn lên một Repository trên GitHub.
-Truy cập vào Vercel.com và đăng nhập bằng tài khoản GitHub.
-Chọn "Add New" -> "Project" -> Chọn Repository của dự án Snake Game.
-Tại phần Framework Preset, Vercel sẽ tự động nhận diện là Vite.
-Nhấn "Deploy". Sau khoảng 1 phút, hệ thống sẽ cung cấp một đường dẫn (URL) chính thức để truy cập game từ bất kỳ đâu.
+

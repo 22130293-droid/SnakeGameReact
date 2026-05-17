@@ -1,16 +1,17 @@
-# 🐍 Snake Platform
+# 🐸 Apple Worm Snake (Rắn Săn Táo)
 
-> Trò chơi Rắn Săn Mồi hiện đại được xây dựng bằng **React + Vite**, với giao diện Neon Cyberpunk cùng nhiều chế độ chơi độc đáo.
+> Trò chơi Rắn Săn Mồi được thiết kế lại với phong cách siêu cấp đáng yêu dựa trên chú ếch **Pepe** và tựa game **Apple Worm**. Chơi một mình để leo top bảng xếp hạng hoặc đối đầu trực tiếp cùng bạn bè với chế độ **1VS1 Online** theo thời gian thực!
 
 ---
 
 ## 📋 Mục Lục
 
 - [Giới Thiệu](#-giới-thiệu)
-- [Tính Năng](#-tính-năng)
+- [Tính Năng Nổi Bật](#-tính-năng-nổi-bật)
+- [Các Chế Độ Chơi](#-các-chế-độ-chơi)
 - [Yêu Cầu Hệ Thống](#-yêu-cầu-hệ-thống)
 - [Hướng Dẫn Cài Đặt](#-hướng-dẫn-cài-đặt)
-- [Hướng Dẫn Chơi](#-hướng-dẫn-chơi)
+- [Cơ Chế & Hướng Dẫn Chơi](#-cơ-chế--hướng-dẫn-chơi)
 - [Cấu Trúc Dự Án](#-cấu-trúc-dự-án)
 - [Công Nghệ Sử Dụng](#-công-nghệ-sử-dụng)
 
@@ -18,259 +19,120 @@
 
 ## 🎮 Giới Thiệu
 
-**Snake Platform** là một trò chơi Rắn Săn Mồi được tái hiện với phong cách **Cyberpunk / Neon** hiện đại. Người chơi điều khiển con rắn ăn thức ăn để tăng điểm số, đồng thời tránh va chạm vào tường và thân rắn.
+Đây không phải là một trò chơi Rắn Săn Mồi bình thường. Dự án này khoác lên mình lớp áo đồ họa phẳng (Flat Design) tươi sáng, với nhân vật chú rắn có **cặp mắt lồi khổng lồ** và **chiếc miệng siêu to** vô cùng hài hước, mang đậm phong cách hoạt hình (Apple Worm / Pepe Frog).
 
-Điểm nổi bật:
-- Hệ thống **đăng nhập / đăng ký** tài khoản người chơi
-- **3 chế độ chơi** với độ khó khác nhau
-- **Bảng xếp hạng** lưu điểm cao nhất theo từng chế độ
-- Hiệu ứng hình ảnh **neon glow**, rung màn hình và âm thanh sống động
+Bạn sẽ điều khiển chú rắn đi ăn những quả táo đỏ mọng để dài ra, thu thập điểm số và tránh những chướng ngại vật tử thần!
 
 ---
 
-## ✨ Tính Năng
+## ✨ Tính Năng Nổi Bật
 
-| Tính năng | Mô tả |
-|---|---|
-| 🔐 Xác thực người dùng | Đăng ký và đăng nhập tài khoản, lưu cục bộ |
-| 🎯 3 Chế độ chơi | Classic, Speed, Survival |
-| 🏆 Bảng xếp hạng | Top 10 người chơi tốt nhất theo từng chế độ |
-| 💥 Hiệu ứng rung màn hình | Screen shake khi ăn mồi hoặc thua cuộc |
-| 🎵 Âm thanh | Âm thanh ăn mồi và game over |
-| 📱 Điều khiển cảm ứng | Nút bấm hướng cho thiết bị di động |
-| 💾 Lưu điểm cao | Tự động lưu điểm cao nhất vào `localStorage` |
+- **🎨 Đồ họa "Apple Worm":** Chú rắn được thiết kế riêng biệt với cặp mắt lồi, miệng rộng, chuyển động uốn lượn mượt mà cùng hình ảnh thân rắn liền mạch hoàn hảo.
+- **🏆 Bảng xếp hạng thông minh (Leaderboard):** Mỗi người chơi chỉ được lưu lại **một kỷ lục cao nhất duy nhất** cho mỗi chế độ chơi, đảm bảo sự công bằng và bảng vàng không bị "spam".
+- **⚔️ 1VS1 Online Realtime:** Tạo phòng và gửi mã cho bạn bè để cùng quyết đấu trực tiếp! Hệ thống áp dụng công nghệ *Client-side Prediction* (Dự đoán phía máy khách) giúp loại bỏ độ trễ (lag/rubber-banding), mang lại trải nghiệm mượt mà kể cả khi mạng không ổn định. Có bảng tên (Name tag) rõ ràng để phân biệt giữa bạn và đối thủ.
+- **⚙️ Tùy chỉnh:** Hỗ trợ đa ngôn ngữ (Tiếng Việt / English) và bật/tắt âm thanh trò chơi.
+
+---
+
+## 🕹️ Các Chế Độ Chơi
+
+Trò chơi cung cấp 4 chế độ chơi chính để bạn không bao giờ cảm thấy nhàm chán:
+
+1. 🟢 **CLASSIC (CỔ ĐIỂN):** Lối chơi truyền thống. Ăn táo để tăng điểm, tốc độ của rắn sẽ tăng dần theo chiều dài. Đâm vào tường hoặc tự cắn đuôi mình sẽ thua.
+2. 🔵 **BORDERLESS (XUYÊN BIÊN GIỚI):** Không có rào chắn xung quanh. Khi rắn đi vào cạnh màn hình bên này, nó sẽ chui ra từ cạnh đối diện. Tuyệt vời cho những pha bẻ lái điệu nghệ!
+3. 🟠 **BRICK WALL (TƯỜNG GẠCH):** Thử thách cực đại. Những bức tường gạch ngẫu nhiên sẽ xuất hiện trên bản đồ. Bạn cần một đôi tay phản xạ nhanh nhạy để né chúng.
+4. ⚔️ **1 VS 1 ONLINE:** Chế độ đối kháng nhiều người. Hai người cùng điều khiển rắn trên một bản đồ chung. **Luật chơi:**
+   - Bạn sẽ THUA nếu đâm vào tường, đâm vào bản thân, hoặc **đâm vào đầu/thân của đối thủ**.
+   - Cùng tranh giành quả táo trên sân để dài ra. Hãy sử dụng thân mình làm vật cản để dồn đối phương vào đường cùng!
 
 ---
 
 ## 💻 Yêu Cầu Hệ Thống
 
-Trước khi cài đặt, hãy đảm bảo máy tính của bạn đã có:
+Để chạy được dự án trên máy cá nhân, bạn cần có:
 
-| Công cụ | Phiên bản tối thiểu | Kiểm tra |
-|---|---|---|
-| **Node.js** | `>= 18.0.0` | `node --version` |
-| **npm** | `>= 9.0.0` | `npm --version` |
-| Trình duyệt web | Chrome / Firefox / Edge (mới nhất) | — |
-
-> **Tải Node.js tại:** https://nodejs.org/en/download
+- **Node.js**: Phiên bản `>= 18.x`
+- **npm**: Phiên bản `>= 9.x`
+- **Trình duyệt**: Chrome, Firefox, Edge, Safari (Phiên bản mới nhất)
 
 ---
 
 ## 🚀 Hướng Dẫn Cài Đặt
 
-### Bước 1 — Clone hoặc tải dự án về máy
+Thực hiện lần lượt các bước sau để khởi chạy game:
 
-Nếu dự án nằm trong thư mục local, hãy mở Terminal / PowerShell và di chuyển vào thư mục dự án:
-
+### Bước 1: Mở thư mục dự án
+Mở Terminal (hoặc PowerShell, Command Prompt) và điều hướng đến thư mục chứa mã nguồn:
 ```bash
-cd đường/dẫn/tới/snake-game
+cd duong/dan/toi/snake-game
 ```
 
-Hoặc nếu dùng Git:
-
-```bash
-git clone <đường-dẫn-repository>
-cd snake-game
-```
-
----
-
-### Bước 2 — Cài đặt các thư viện phụ thuộc
-
-Chạy lệnh sau để cài đặt toàn bộ package cần thiết:
-
+### Bước 2: Cài đặt thư viện
+Cài đặt toàn bộ các packages phụ thuộc của React và Firebase bằng lệnh:
 ```bash
 npm install
 ```
 
-> Quá trình này sẽ tải xuống các thư viện như React, Vite, Tailwind CSS, Framer Motion,... vào thư mục `node_modules/`.
-
----
-
-### Bước 3 — Khởi chạy ứng dụng (môi trường Development)
-
+### Bước 3: Chạy server phát triển
+Sau khi cài đặt xong, khởi động Vite dev server:
 ```bash
 npm run dev
 ```
 
-Sau khi chạy thành công, terminal sẽ hiển thị địa chỉ truy cập, thường là:
-
-```
-  VITE v8.x.x  ready in xxx ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: http://192.168.x.x:5173/
-```
-
-Mở trình duyệt và truy cập vào địa chỉ **`http://localhost:5173`** để bắt đầu chơi.
+### Bước 4: Trải nghiệm
+Mở trình duyệt web của bạn và truy cập vào đường dẫn:
+👉 **`http://localhost:5173`**
 
 ---
 
-### Bước 4 — (Tùy chọn) Build cho Production
+## ⌨️ Cơ Chế & Hướng Dẫn Chơi
 
-Nếu muốn đóng gói ứng dụng để triển khai lên web server:
-
-```bash
-npm run build
-```
-
-File đầu ra sẽ nằm trong thư mục `dist/`. Để xem trước bản build:
-
-```bash
-npm run preview
-```
-
----
-
-### ❗ Xử Lý Lỗi Thường Gặp
-
-| Lỗi | Nguyên nhân | Giải pháp |
-|---|---|---|
-| `node: command not found` | Chưa cài Node.js | Tải và cài Node.js từ nodejs.org |
-| `npm install` thất bại | Lỗi mạng hoặc quyền truy cập | Chạy lại với `npm install --legacy-peer-deps` |
-| Cổng 5173 bị chiếm | Ứng dụng khác đang dùng cổng này | Thêm `--port 3000` vào lệnh dev |
-| Màn hình trắng khi mở | Cache trình duyệt | Xóa cache hoặc thử Ctrl+Shift+R |
-
----
-
-## 🕹️ Hướng Dẫn Chơi
-
-### 1. Đăng Nhập / Đăng Ký
-
-Khi khởi động, màn hình đăng nhập sẽ xuất hiện:
-
-- **Đăng ký:** Nhập tên người dùng và mật khẩu muốn tạo → nhấn **REGISTER**
-- **Đăng nhập:** Nhập tên và mật khẩu đã đăng ký → nhấn **LOGIN**
-
-> 💡 Tài khoản được lưu trong `localStorage` của trình duyệt, không cần server backend.
-
----
-
-### 2. Menu Chính
-
-Sau khi đăng nhập, bạn sẽ thấy màn hình **SNAKE PLATFORM** với 3 nút:
-
-| Nút | Chức năng |
-|---|---|
-| 🟢 **START GAME** | Chọn chế độ chơi và bắt đầu |
-| 🔵 **LEADERBOARD** | Xem bảng xếp hạng điểm cao |
-| 🟣 **SETTINGS** | Cài đặt (sắp ra mắt) |
-
----
-
-### 3. Chọn Chế Độ Chơi
-
-Nhấn **START GAME** để đến màn hình chọn chế độ:
-
-#### 🟢 CLASSIC — Chế Độ Cổ Điển
-- Tốc độ cố định, không thay đổi
-- **Va chạm tường = thua cuộc**
-- Phù hợp cho người mới bắt đầu
-
-#### 🔴 SPEED — Chế Độ Tốc Độ
-- Bắt đầu với tốc độ thường, **mỗi lần ăn mồi tốc độ tăng thêm**
-- Va chạm tường = thua cuộc
-- Thử thách dành cho người chơi có kinh nghiệm
-
-#### 🔵 SURVIVAL — Chế Độ Sinh Tồn
-- **Không có tường!** Rắn xuyên qua biên màn hình và xuất hiện bên đối diện
-- Va chạm thân rắn vẫn = thua cuộc
-- Tốc độ cố định, không gian di chuyển rộng hơn
-
----
-
-### 4. Điều Khiển Trong Game
-
-| Hành động | Bàn phím | Di động |
-|---|---|---|
-| Di chuyển lên | `↑` hoặc `W` | Nút ↑ trên màn hình |
-| Di chuyển xuống | `↓` hoặc `S` | Nút ↓ trên màn hình |
-| Di chuyển trái | `←` hoặc `A` | Nút ← trên màn hình |
-| Di chuyển phải | `→` hoặc `D` | Nút → trên màn hình |
-| Chơi lại (khi thua) | `Space` | Nút **TRY AGAIN** |
-
-> ⚠️ **Lưu ý:** Rắn không thể quay đầu 180° trực tiếp (ví dụ: đang đi phải không thể rẽ ngay sang trái).
-
----
-
-### 5. Hệ Thống Điểm
-
-- Mỗi lần ăn một mồi → **+10 điểm**
-- Điểm được hiển thị ở góc trên của màn hình chơi
-- Khi thua, điểm cao nhất sẽ tự động được lưu vào tài khoản
-
----
-
-### 6. Màn Hình Game Over
-
-Khi rắn va chạm (tường hoặc thân), màn hình **GAME OVER** xuất hiện:
-
-- Điểm số của ván vừa chơi được hiển thị
-- Nhấn **TRY AGAIN** hoặc phím `Space` để chơi lại
-- Nhấn nút **←** góc trái trên để quay về Menu
-
----
-
-### 7. Bảng Xếp Hạng
-
-Tại **LEADERBOARD**, bạn có thể:
-- Xem **Top 10** người chơi có điểm cao nhất
-- Lọc theo từng chế độ: Classic / Speed / Survival
-- Điểm được cập nhật tự động sau mỗi ván chơi
+- **Đăng Nhập:** Bạn cần Đăng Nhập / Đăng Ký (thông qua Email hoặc Google) để hệ thống có thể lưu điểm số lên cơ sở dữ liệu đám mây (Firebase).
+- **Phím Điều Khiển:**
+  - Sử dụng phím **MŨI TÊN** (`Lên`, `Xuống`, `Trái`, `Phải`).
+  - Hoặc sử dụng các phím **W, A, S, D** để điều hướng.
+- **Lưu Ý Đặc Biệt Chế Độ 1VS1:** 
+  - Tại Menu 1VS1, bấm **Tạo Phòng Mới**. Sau đó bấm "Sao chép mã" và gửi mã phòng đó cho bạn bè.
+  - Người bạn kia dán mã phòng vào ô trống và bấm **Vào Phòng**. Trận chiến sẽ lập tức bắt đầu!
 
 ---
 
 ## 📁 Cấu Trúc Dự Án
 
-```
+```text
 snake-game/
-├── public/                  # Tài nguyên tĩnh
+├── public/                  
 ├── src/
 │   ├── components/
-│   │   ├── Auth.jsx         # Màn hình đăng nhập / đăng ký
-│   │   ├── Game.jsx         # Engine game chính (Canvas)
-│   │   └── Leaderboard.jsx  # Bảng xếp hạng
+│   │   ├── Auth.jsx            # Giao diện Đăng nhập / Đăng ký
+│   │   ├── Game.jsx            # Engine chính (vẽ rắn, táo, xử lý logic)
+│   │   ├── MultiplayerGame.jsx # Engine chế độ 1vs1 (Realtime Firebase)
+│   │   ├── Leaderboard.jsx     # Bảng xếp hạng toàn cầu
+│   │   └── TopNav.jsx          # Thanh điều hướng phía trên
 │   ├── utils/
-│   │   ├── audio.js         # Xử lý âm thanh (ăn mồi, game over)
-│   │   └── storage.js       # Lưu/đọc dữ liệu localStorage
-│   ├── App.jsx              # Component gốc, điều hướng màn hình
-│   ├── index.css            # Global styles, design system
-│   └── main.jsx             # Entry point
-├── index.html               # HTML gốc
-├── package.json             # Danh sách thư viện
-├── tailwind.config.js       # Cấu hình Tailwind CSS
-├── vite.config.js           # Cấu hình Vite bundler
-└── README.md                # Tài liệu này
+│   │   ├── translations.js     # Chứa từ điển Tiếng Việt / Tiếng Anh
+│   │   └── audio.js            # Trình quản lý âm thanh (Sound Effects)
+│   ├── App.jsx                 # Bộ định tuyến và Quản lý trạng thái gốc
+│   ├── firebase.js             # Cấu hình kết nối Backend Firebase
+│   ├── index.css               # Chứa toàn bộ CSS Tailwind & Custom Styles
+│   └── main.jsx                # Điểm vào (Entry point) của React
+├── package.json             
+└── vite.config.js           
 ```
 
 ---
 
 ## 🛠️ Công Nghệ Sử Dụng
 
-| Công nghệ | Mô tả |
-|---|---|
-| **React 19** | Thư viện UI, quản lý state và vòng đời |
-| **Vite 8** | Build tool siêu nhanh, HMR (Hot Module Replacement) |
-| **Tailwind CSS 4** | Utility-first CSS framework |
-| **Framer Motion** | Thư viện animation mượt mà |
-| **Lucide React** | Bộ icon SVG hiện đại |
-| **HTML5 Canvas** | Vẽ và render game engine |
-| **localStorage** | Lưu trữ tài khoản và điểm số cục bộ |
-
----
-
-## 🎨 Giao Diện
-
-Ứng dụng sử dụng phong cách **Cyberpunk / Neon Dark**:
-- Nền tối (`#0b0c10`)
-- Màu chủ đạo: **Neon Green** `#39ff14`, **Neon Cyan** `#00f3ff`, **Neon Pink** `#ff00ff`
-- Font chữ: **Press Start 2P** (tiêu đề), **Fira Code** (nội dung)
-- Hiệu ứng glow, blur, glassmorphism
+- **Frontend:** React.js, Vite
+- **Styling:** Tailwind CSS
+- **Animations:** Framer Motion
+- **Graphics & Rendering:** HTML5 Canvas API (cho chuyển động mượt mà 60FPS)
+- **Backend & Database:** Firebase Authentication, Cloud Firestore (Bảng xếp hạng), Firebase Realtime Database (Đồng bộ Multiplayer 1VS1)
+- **Icons:** Lucide React
 
 ---
 
 <div align="center">
-
-**Chúc bạn chơi vui vẻ! 🐍✨**
-
+  <b>Cầm lấy phím và giành lấy kỷ lục cao nhất ngay thôi! 🥇</b>
 </div>

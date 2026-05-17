@@ -1,37 +1,63 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fira+Code:wght@400;600&display=swap');
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
 @layer utilities {
+
+  /* ─── Google-Snake Card ─── */
+  .gs-card {
+    @apply bg-white rounded-3xl shadow-card border-2 border-gs-border;
+  }
+
+  /* ─── Primary green button ─── */
+  .gs-btn {
+    @apply relative font-nunito font-extrabold text-white bg-gs-green rounded-2xl px-8 py-4 shadow-btn transition-all duration-200 hover:bg-gs-green-dark hover:shadow-btn-hover hover:-translate-y-0.5 active:translate-y-0 active:shadow-btn border-b-4 border-gs-green-dark select-none;
+  }
+
+  /* ─── Outlined button ─── */
+  .gs-btn-outline {
+    @apply font-nunito font-bold bg-white rounded-2xl px-6 py-3 border-2 border-gs-border shadow-card transition-all duration-200 hover:border-gs-green hover:text-gs-green hover:-translate-y-0.5 select-none;
+  }
+
+  /* ─── Mode card ─── */
+  .gs-mode-card {
+    @apply bg-white rounded-3xl p-5 border-2 border-gs-border shadow-card cursor-pointer transition-all duration-200 hover:border-gs-green hover:-translate-y-1 hover:shadow-btn select-none;
+  }
+
+  /* ─── Chip / Badge ─── */
+  .gs-chip {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold font-nunito;
+  }
+
+  /* ─── Back link ─── */
+  .gs-back {
+    @apply flex items-center gap-2 text-gs-text-light font-bold font-nunito hover:text-gs-green transition-colors cursor-pointer;
+  }
+
+  /* Keep old glass-panel for game canvas overlay compatibility */
   .glass-panel {
-    @apply bg-dark-surface/60 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl shadow-black/50;
+    @apply bg-white/80 backdrop-blur-md border-2 border-gs-border rounded-3xl shadow-card;
   }
-  
-  .text-glow-cyan {
-    text-shadow: 0 0 10px theme('colors.neon.cyan'), 0 0 20px theme('colors.neon.cyan');
-  }
-  
-  .text-glow-green {
-    text-shadow: 0 0 10px theme('colors.neon.green'), 0 0 20px theme('colors.neon.green');
-  }
+}
 
-  .text-glow-pink {
-    text-shadow: 0 0 10px theme('colors.neon.pink'), 0 0 20px theme('colors.neon.pink');
-  }
-
-  .btn-neon {
-    @apply relative px-8 py-4 font-press-start text-sm md:text-base uppercase tracking-widest text-white transition-all duration-300
-    hover:scale-105 hover:bg-white/5 border-2 rounded-lg overflow-hidden;
-  }
+/* ── Global reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background-color: theme('colors.dark.bg');
-  color: #ffffff;
-  font-family: theme('fontFamily.fira-code'), system-ui, sans-serif;
+  background-color: #c8e89a;
+  background-image:
+    radial-gradient(ellipse at 15% 15%, #bbe06a 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, #a5d96a 0%, transparent 55%);
+  font-family: 'Nunito', system-ui, sans-serif;
   overflow: hidden;
-  background-image: radial-gradient(circle at center, rgba(57, 255, 20, 0.05) 0%, transparent 70%);
+  color: #2d4a1e;
+  min-height: 100vh;
+  user-select: none;
 }
 
 #root {
@@ -39,4 +65,103 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e8f5e9;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a5d6a7;
+  border-radius: 99px;
+}
+
+/* ── Loading dots ── */
+@keyframes gg-bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+.gg-dot {
+  display: inline-block;
+  animation: gg-bounce 0.8s ease-in-out infinite;
+  border-radius: 50%;
+}
+
+.gg-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.gg-dot:nth-child(3) {
+  animation-delay: 0.30s;
+}
+
+/* ── Winner pop ── */
+@keyframes winner-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+
+  70% {
+    transform: scale(1.12);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.winner-pop {
+  animation: winner-pop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+/* ── Snake float decoration ── */
+@keyframes float-snake {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(-4deg);
+  }
+
+  50% {
+    transform: translateY(-14px) rotate(4deg);
+  }
+}
+
+.float-snake {
+  animation: float-snake 3s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* ── Grass tile background pattern ── */
+.grass-bg {
+  background-color: #7ec850;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* ── Soft shadow card on hover ── */
+.hover-lift {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.25);
 }

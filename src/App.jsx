@@ -1,194 +1,325 @@
 import { useState, useEffect } from 'react';
-import { Play, Trophy, Settings, LogOut, User } from 'lucide-react';
+import { Play, Trophy, Settings, LogOut, User, Users, Volume2, VolumeX, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { db, auth } from './firebase';
+import { translations } from './utils/translations';
+import { playBGM, stopBGM } from './utils/audio';
 import Game from './components/Game';
 import Auth from './components/Auth';
 import Leaderboard from './components/Leaderboard';
-import { getCurrentUser, logoutUser } from './utils/storage';
+import MultiplayerGame from './components/MultiplayerGame';
+
+// ─── Mode data ───────────────────────────────────────────────
+const MODES = [
+  { id: 'classic',    emoji: '🐍', color: '#4caf50', bg: '#e8f5e9', border: '#a5d6a7', labelKey: 'classic',    descKey: 'classicDesc'    },
+  { id: 'borderless', emoji: '🌀', color: '#8e24aa', bg: '#f3e5f5', border: '#ce93d8', labelKey: 'borderless', descKey: 'borderlessDesc' },
+  { id: 'brick',      emoji: '🧱', color: '#fb8c00', bg: '#fff3e0', border: '#ffb74d', labelKey: 'brick',      descKey: 'brickDesc'      },
+];
+
+// ─── Slide transition variants ────────────────────────────────
+const pageVariants = {
+  hidden:  { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] } },
+  exit:    { opacity: 0, y: -16, transition: { duration: 0.2 } },
+};
+
+// ─── Snake SVG decoration ─────────────────────────────────────
+const SnakeDeco = () => (
+  <svg className="float-snake" width="60" height="60" viewBox="0 0 60 60" fill="none">
+    <ellipse cx="30" cy="36" rx="18" ry="14" fill="#4caf50" />
+    <ellipse cx="22" cy="28" rx="10" ry="8"  fill="#4caf50" />
+    <ellipse cx="14" cy="22" rx="7" ry="6"  fill="#4caf50" />
+    <circle cx="34" cy="28" r="16" fill="#4caf50" />
+    {/* Head */}
+    <ellipse cx="42" cy="18" rx="14" ry="12" fill="#66bb6a" />
+    {/* Eyes */}
+    <circle cx="38" cy="14" r="4" fill="white" />
+    <circle cx="46" cy="14" r="4" fill="white" />
+    <circle cx="39" cy="14" r="2" fill="#1a237e" />
+    <circle cx="47" cy="14" r="2" fill="#1a237e" />
+    {/* Tongue */}
+    <path d="M44 24 L50 28 M50 28 L48 31 M50 28 L52 31" stroke="#e53935" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
 
 function App() {
-  const [activeTab, setActiveTab] = useState('auth'); // 'auth', 'menu', 'select_mode', 'game', 'leaderboard', 'settings'
+  const [activeTab, setActiveTab] = useState('loading');
   const [selectedMode, setSelectedMode] = useState('classic');
-  const [currentUser, setCurrentUser] = useState(null);
+  const [language, setLanguage] = useState('vi');
+  const t = translations[language];
+  const [currentUser, setCurrentUser]   = useState(null);
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
-    // Only set state if the user object changes
-    const fetchUser = async () => {
-       const user = getCurrentUser();
-       if (user) {
-         setCurrentUser(user);
-         setActiveTab('menu');
-       } else {
-         setActiveTab('auth');
-       }
-    };
-    fetchUser();
+    if (!isMuted) playBGM();
+    else stopBGM();
+  }, [isMuted]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setFirebaseUser(user);
+        setCurrentUser(user.displayName || user.email?.split('@')[0] || 'Player');
+        setActiveTab('menu');
+      } else {
+        setFirebaseUser(null);
+        setCurrentUser(null);
+        setActiveTab('auth');
+      }
+    });
+    return () => unsub();
   }, []);
 
-  const handleLogin = (username) => {
-    setCurrentUser(username);
-    setActiveTab('menu');
-  };
+  const handleLogin  = (name, user) => { setCurrentUser(name); setFirebaseUser(user); setActiveTab('menu'); };
+  const handleLogout = async () => { await signOut(auth); setCurrentUser(null); setFirebaseUser(null); };
+  const handleInteraction = () => { if (!isMuted) playBGM(); };
 
-  const handleLogout = () => {
-    logoutUser();
-    setCurrentUser(null);
-    setActiveTab('auth');
-  };
+  // ── Loading ──────────────────────────────────────────────────
+  if (activeTab === 'loading') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: '#c8e89a' }}>
+        <div className="text-5xl mb-6 float-snake">🐍</div>
+        <div className="flex gap-3">
+          <span className="gg-dot w-4 h-4 bg-gs-green" />
+          <span className="gg-dot w-4 h-4 bg-gs-green-dark" />
+          <span className="gg-dot w-4 h-4 bg-gs-green" />
+        </div>
+        <p className="mt-4 font-nunito font-bold text-gs-text-light text-sm">Đang tải...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-bg text-white relative overflow-hidden font-fira-code">
-      {/* Background decoration elements */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neon-green/10 rounded-full blur-[100px]" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-neon-cyan/10 rounded-full blur-[100px]" />
+    <div
+      onClick={handleInteraction}
+      className="min-h-screen flex items-center justify-center relative overflow-hidden select-none"
+      style={{ background: 'linear-gradient(160deg, #c2e57a 0%, #a8d45a 100%)' }}
+    >
+      {/* Grass dots pattern */}
+      <div className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
 
-      {/* User Info Bar */}
+      {/* ── User pill (top-right) ── */}
       {currentUser && activeTab !== 'game' && activeTab !== 'auth' && (
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-4 bg-black/40 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md">
-          <div className="flex items-center gap-2 text-neon-green font-fira-code text-sm">
-            <User className="w-4 h-4" />
-            <span>{currentUser}</span>
-          </div>
-          <button 
-            onClick={handleLogout}
-            className="text-gray-400 hover:text-neon-pink transition-colors"
-            title="Logout"
-          >
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-white/90 backdrop-blur px-4 py-2 rounded-full border-2 border-gs-border shadow-card"
+        >
+          {firebaseUser?.photoURL
+            ? <img src={firebaseUser.photoURL} alt="av" className="w-7 h-7 rounded-full border-2 border-gs-green" />
+            : <div className="w-7 h-7 rounded-full bg-gs-green flex items-center justify-center text-white font-bold text-xs">{currentUser[0]?.toUpperCase()}</div>
+          }
+          <span className="font-nunito font-bold text-gs-text text-sm">{currentUser}</span>
+          <button onClick={handleLogout} className="ml-1 text-gs-text-light hover:text-gs-red transition-colors" title="Logout">
             <LogOut className="w-4 h-4" />
           </button>
-        </div>
+        </motion.div>
       )}
 
       <AnimatePresence mode="wait">
+
+        {/* ══════════════ AUTH ══════════════ */}
         {activeTab === 'auth' && (
           <Auth key="auth" onLoginSuccess={handleLogin} onBack={() => setActiveTab('menu')} />
         )}
-      </AnimatePresence>
 
-      {activeTab === 'menu' && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="z-10 flex flex-col items-center glass-panel p-12 w-full max-w-2xl mx-4"
-        >
-          <motion.div
-            animate={{ 
-              textShadow: [
-                "0 0 10px #39ff14, 0 0 20px #39ff14", 
-                "0 0 5px #39ff14, 0 0 10px #39ff14", 
-                "0 0 10px #39ff14, 0 0 20px #39ff14"
-              ] 
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="text-center mb-12"
+        {/* ══════════════ MENU ══════════════ */}
+        {activeTab === 'menu' && (
+          <motion.div key="menu" variants={pageVariants} initial="hidden" animate="visible" exit="exit"
+            className="z-10 flex flex-col items-center w-full max-w-md mx-4"
           >
-            <h1 className="text-4xl md:text-6xl font-press-start text-neon-green mb-4">
-              SNAKE
-            </h1>
-            <h2 className="text-2xl md:text-4xl font-press-start text-white text-glow-cyan tracking-widest">
-              PLATFORM
-            </h2>
+            {/* Hero card */}
+            <div className="gs-card w-full px-8 py-10 flex flex-col items-center">
+              {/* Title */}
+              <div className="flex items-center gap-3 mb-2">
+                <span className="float-snake text-4xl">🐍</span>
+                <h1 className="font-nunito font-black text-4xl text-gs-text leading-none">
+                  {t.title}
+                </h1>
+              </div>
+              <p className="text-gs-text-light font-semibold text-sm mb-8">Chơi ngay và lên bảng xếp hạng!</p>
+
+              <div className="flex flex-col gap-3 w-full">
+                {/* Play */}
+                <button onClick={() => setActiveTab('select_mode')}
+                  className="gs-btn w-full text-lg flex items-center justify-center gap-3 py-5"
+                >
+                  <Play className="w-6 h-6 fill-white" />
+                  {t.play}
+                </button>
+
+                {/* 1VS1 */}
+                <button onClick={() => setActiveTab('multiplayer')}
+                  className="gs-btn w-full flex items-center justify-center gap-3 py-4"
+                  style={{ background: '#fb8c00', borderColor: '#e65100' }}
+                >
+                  <Users className="w-5 h-5" />
+                  {t.multiplayer}
+                </button>
+
+                {/* Leaderboard */}
+                <button onClick={() => setActiveTab('leaderboard')}
+                  className="gs-btn-outline w-full flex items-center justify-center gap-3 py-4 text-gs-text font-bold"
+                >
+                  <Trophy className="w-5 h-5 text-yellow-500" />
+                  {t.leaderboard}
+                </button>
+
+                {/* Row: Settings + Logout */}
+                <div className="grid grid-cols-2 gap-3 mt-1">
+                  <button onClick={() => setActiveTab('settings')}
+                    className="gs-btn-outline flex items-center justify-center gap-2 py-3 text-gs-text font-bold text-sm"
+                  >
+                    <Settings className="w-4 h-4" />
+                    {t.settings}
+                  </button>
+                  {currentUser
+                    ? <button onClick={handleLogout}
+                        className="gs-btn-outline flex items-center justify-center gap-2 py-3 text-red-500 font-bold text-sm border-red-200 hover:border-red-400 hover:text-red-600"
+                      ><LogOut className="w-4 h-4" />{t.logout}</button>
+                    : <button onClick={() => setActiveTab('auth')}
+                        className="gs-btn-outline flex items-center justify-center gap-2 py-3 text-gs-blue font-bold text-sm border-blue-200 hover:border-blue-400"
+                      ><User className="w-4 h-4" />GOOGLE</button>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Grass footer deco */}
+            <div className="mt-4 text-3xl flex gap-3">
+              <span>🍎</span><span className="opacity-60">🍓</span><span className="opacity-40">🫐</span>
+            </div>
           </motion.div>
+        )}
 
-          <div className="flex flex-col gap-6 w-full max-w-md">
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveTab('select_mode')}
-              className="btn-neon border-neon-green text-neon-green hover:bg-neon-green/10 hover:shadow-[0_0_20px_rgba(57,255,20,0.4)] flex items-center justify-center gap-4 group"
-            >
-              <Play className="w-6 h-6 group-hover:animate-pulse fill-current" />
-              START GAME
-            </motion.button>
-
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveTab('leaderboard')}
-              className="btn-neon border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] flex items-center justify-center gap-4 group"
-            >
-              <Trophy className="w-6 h-6 group-hover:animate-bounce" />
-              LEADERBOARD
-            </motion.button>
-
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveTab('settings')}
-              className="btn-neon border-neon-pink text-neon-pink hover:bg-neon-pink/10 hover:shadow-[0_0_20px_rgba(255,0,255,0.4)] flex items-center justify-center gap-4 group"
-            >
-              <Settings className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
-              SETTINGS
-            </motion.button>
-          </div>
-
-          <div className="mt-12 text-gray-400 text-sm flex gap-4">
-            <p>Use <kbd className="bg-white/10 px-2 py-1 rounded font-press-start text-xs mx-1">WASD</kbd> or Arrows</p>
-          </div>
-        </motion.div>
-      )}
-
-      {activeTab === 'select_mode' && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="z-10 flex flex-col items-center glass-panel p-12 w-full max-w-2xl mx-4"
-        >
-          <h2 className="text-3xl font-press-start text-neon-cyan mb-8 text-glow-cyan">SELECT MODE</h2>
-          <div className="flex flex-col gap-6 w-full max-w-md">
-            <button 
-              onClick={() => { setSelectedMode('classic'); setActiveTab('game'); }}
-              className="btn-neon border-neon-green text-neon-green hover:bg-neon-green/10 flex flex-col items-center py-6"
-            >
-              <span className="text-xl mb-2">CLASSIC</span>
-              <span className="text-xs font-fira-code text-gray-400 normal-case">Standard speed, walls are deadly</span>
-            </button>
-            <button 
-              onClick={() => { setSelectedMode('speed'); setActiveTab('game'); }}
-              className="btn-neon border-neon-pink text-neon-pink hover:bg-neon-pink/10 flex flex-col items-center py-6"
-            >
-              <span className="text-xl mb-2">SPEED</span>
-              <span className="text-xs font-fira-code text-gray-400 normal-case">Gets faster with every food</span>
-            </button>
-            <button 
-              onClick={() => { setSelectedMode('survival'); setActiveTab('game'); }}
-              className="btn-neon border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 flex flex-col items-center py-6"
-            >
-              <span className="text-xl mb-2">SURVIVAL</span>
-              <span className="text-xs font-fira-code text-gray-400 normal-case">No walls! Wrap around the edges</span>
-            </button>
-          </div>
-          <button 
-            onClick={() => setActiveTab('menu')}
-            className="mt-8 text-gray-400 hover:text-white transition-colors"
+        {/* ══════════════ SELECT MODE ══════════════ */}
+        {activeTab === 'select_mode' && (
+          <motion.div key="select" variants={pageVariants} initial="hidden" animate="visible" exit="exit"
+            className="z-10 w-full max-w-lg mx-4"
           >
-            ← Back to Menu
-          </button>
-        </motion.div>
-      )}
+            <div className="gs-card px-8 py-8">
+              <button onClick={() => setActiveTab('menu')} className="gs-back mb-5">
+                <ChevronLeft className="w-5 h-5" /> {t.back}
+              </button>
+              <h2 className="font-nunito font-black text-3xl text-gs-text mb-6">{t.selectMode}</h2>
 
-      {activeTab === 'game' && (
-        <div className="z-10">
-          <Game mode={selectedMode} onBack={() => setActiveTab('menu')} currentUser={currentUser} />
-        </div>
-      )}
+              <div className="flex flex-col gap-3">
+                {MODES.map((m) => (
+                  <button key={m.id}
+                    onClick={() => { setSelectedMode(m.id); setActiveTab('game'); }}
+                    className="gs-mode-card flex items-center gap-4 text-left w-full"
+                    style={{ borderColor: selectedMode === m.id ? m.color : undefined }}
+                  >
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+                      style={{ background: m.bg, border: `2px solid ${m.border}` }}>
+                      {m.emoji}
+                    </div>
+                    <div>
+                      <div className="font-nunito font-black text-lg text-gs-text"
+                        style={{ color: m.color }}>{t[m.labelKey]}</div>
+                      <div className="text-gs-text-light text-sm font-semibold">{t[m.descKey]}</div>
+                    </div>
+                    <div className="ml-auto text-gs-border">›</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
 
-      {activeTab === 'leaderboard' && (
-        <Leaderboard onBack={() => setActiveTab('menu')} />
-      )}
+        {/* ══════════════ GAME ══════════════ */}
+        {activeTab === 'game' && (
+          <motion.div key="game" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="z-10">
+            <Game
+              mode={selectedMode}
+              onBack={() => setActiveTab('menu')}
+              onMenu={() => setActiveTab('menu')}
+              currentUser={currentUser}
+              firebaseUser={firebaseUser}
+              lang={language}
+              isMuted={isMuted}
+              onToggleMute={() => setIsMuted(m => !m)}
+            />
+          </motion.div>
+        )}
 
-      {/* Placeholders for other tabs for future phases */}
-      {activeTab !== 'auth' && activeTab !== 'menu' && activeTab !== 'game' && activeTab !== 'select_mode' && activeTab !== 'leaderboard' && (
-        <div className="z-10 flex flex-col items-center glass-panel p-12">
-          <h2 className="text-2xl font-press-start mb-8 text-neon-cyan">COMING SOON</h2>
-          <button 
-            onClick={() => setActiveTab('menu')}
-            className="btn-neon border-white text-white hover:bg-white/10"
+        {/* ══════════════ LEADERBOARD ══════════════ */}
+        {activeTab === 'leaderboard' && (
+          <motion.div key="lb" variants={pageVariants} initial="hidden" animate="visible" exit="exit" className="z-10 w-full max-w-2xl mx-4">
+            <Leaderboard onBack={() => setActiveTab('menu')} lang={language} />
+          </motion.div>
+        )}
+
+        {/* ══════════════ MULTIPLAYER ══════════════ */}
+        {activeTab === 'multiplayer' && (
+          <motion.div key="mp" variants={pageVariants} initial="hidden" animate="visible" exit="exit" className="z-10 w-full max-w-lg mx-4">
+            <MultiplayerGame
+              onBack={() => setActiveTab('menu')}
+              currentUser={currentUser}
+              firebaseUser={firebaseUser}
+              lang={language}
+            />
+          </motion.div>
+        )}
+
+        {/* ══════════════ SETTINGS ══════════════ */}
+        {activeTab === 'settings' && (
+          <motion.div key="settings" variants={pageVariants} initial="hidden" animate="visible" exit="exit"
+            className="z-10 w-full max-w-sm mx-4"
           >
-            BACK TO MENU
-          </button>
-        </div>
-      )}
+            <div className="gs-card px-8 py-8">
+              <button onClick={() => setActiveTab('menu')} className="gs-back mb-5">
+                <ChevronLeft className="w-5 h-5" /> {t.back}
+              </button>
+              <h2 className="font-nunito font-black text-3xl text-gs-text mb-6">{t.settings}</h2>
+
+              <div className="flex flex-col gap-4">
+                {/* Volume */}
+                <div className="flex items-center justify-between bg-gs-bg rounded-2xl px-5 py-4 border-2 border-gs-border">
+                  <div className="flex items-center gap-3">
+                    {isMuted ? <VolumeX className="w-5 h-5 text-gs-text-light" /> : <Volume2 className="w-5 h-5 text-gs-green" />}
+                    <span className="font-nunito font-bold text-gs-text">{t.volume}</span>
+                  </div>
+                  <button
+                    onClick={() => setIsMuted(m => !m)}
+                    className={`w-14 h-7 rounded-full border-2 transition-all duration-300 relative ${!isMuted ? 'bg-gs-green border-gs-green-dark' : 'bg-gray-200 border-gray-300'}`}
+                  >
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300 ${!isMuted ? 'left-7' : 'left-0.5'}`} />
+                  </button>
+                </div>
+
+                {/* Language */}
+                <div className="flex items-center justify-between bg-gs-bg rounded-2xl px-5 py-4 border-2 border-gs-border">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">🌐</span>
+                    <span className="font-nunito font-bold text-gs-text">{t.language}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {['vi', 'en'].map(lang => (
+                      <button key={lang}
+                        onClick={() => setLanguage(lang)}
+                        className={`px-4 py-1.5 rounded-xl font-bold text-sm font-nunito transition-all border-2 ${
+                          language === lang
+                            ? 'bg-gs-green text-white border-gs-green-dark shadow-btn'
+                            : 'bg-white text-gs-text border-gs-border hover:border-gs-green'
+                        }`}
+                      >{lang.toUpperCase()}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+      </AnimatePresence>
     </div>
   );
 }

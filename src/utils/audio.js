@@ -43,3 +43,35 @@ export const playGameOverSound = () => {
     console.warn("Audio not supported");
   }
 };
+let bgm = null;
+
+export const playBGM = () => {
+  if (bgm && !bgm.paused) return;
+  
+  if (!bgm) {
+    // Ưu tiên chạy file nội bộ bạn vừa copy vào
+    bgm = new Audio('/assets/audio/bgm.mp3');
+    bgm.loop = true;
+    bgm.volume = 0.4;
+    
+    // Xử lý lỗi nếu bạn chưa kịp copy file vào thư mục
+    bgm.onerror = () => {
+      console.warn("Local bgm.mp3 not found. Falling back to online source...");
+      bgm.src = 'https://ia800905.us.archive.org/21/items/PiratesOfTheCaribbeanThemeSong/Pirates%20of%20the%20Caribbean%20Theme%20Song.mp3';
+      bgm.play();
+    };
+  }
+  
+  bgm.play().catch(e => console.log("Interaction needed to play music"));
+};
+
+export const stopBGM = () => {
+  if (bgm) {
+    bgm.pause();
+    bgm.currentTime = 0;
+  }
+};
+
+export const setBGMVolume = (vol) => {
+  if (bgm) bgm.volume = vol;
+};

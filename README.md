@@ -1,4 +1,9 @@
+<<<<<<< HEAD
+
+# 🐍 Snake Platform
+=======
 # 🐸 Apple Worm Snake (Rắn Săn Táo)
+>>>>>>> 80369a5 (feat: update Apple Worm snake design, fix 1v1 latency bugs, and rewrite README)
 
 > Trò chơi Rắn Săn Mồi được thiết kế lại với phong cách siêu cấp đáng yêu dựa trên chú ếch **Pepe** và tựa game **Apple Worm**. Chơi một mình để leo top bảng xếp hạng hoặc đối đầu trực tiếp cùng bạn bè với chế độ **1VS1 Online** theo thời gian thực!
 
@@ -79,9 +84,22 @@ Sau khi cài đặt xong, khởi động Vite dev server:
 npm run dev
 ```
 
+<<<<<<< HEAD
+Sau khi chạy thành công, terminal sẽ hiển thị địa chỉ truy cập, thường là:
+
+```
+  VITE v8.x.x  ready in xxx ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.x.x:5173/
+```
+
+Mở trình duyệt và truy cập vào địa chỉ **`http://localhost:5173`** để bắt đầu chơi.
+=======
 ### Bước 4: Trải nghiệm
 Mở trình duyệt web của bạn và truy cập vào đường dẫn:
 👉 **`http://localhost:5173`**
+>>>>>>> 80369a5 (feat: update Apple Worm snake design, fix 1v1 latency bugs, and rewrite README)
 
 ---
 
@@ -101,6 +119,25 @@ Mở trình duyệt web của bạn và truy cập vào đường dẫn:
 
 ```text
 snake-game/
+<<<<<<< HEAD
+├── public/                  # Tài nguyên tĩnh
+├── src/
+│   ├── components/
+│   │   ├── Auth.jsx         # Màn hình đăng nhập / đăng ký
+│   │   ├── Game.jsx         # Engine game chính (Canvas)
+│   │   └── Leaderboard.jsx  # Bảng xếp hạng
+│   ├── utils/
+│   │   ├── audio.js         # Xử lý âm thanh (ăn mồi, game over)
+│   │   └── storage.js       # Lưu/đọc dữ liệu localStorage
+│   ├── App.jsx              # Component gốc, điều hướng màn hình
+│   ├── index.css            # Global styles, design system
+│   └── main.jsx             # Entry point
+├── index.html               # HTML gốc
+├── package.json             # Danh sách thư viện
+├── tailwind.config.js       # Cấu hình Tailwind CSS
+├── vite.config.js           # Cấu hình Vite bundler
+└── README.md                # Tài liệu này
+=======
 ├── public/                  
 ├── src/
 │   ├── components/
@@ -118,6 +155,7 @@ snake-game/
 │   └── main.jsx                # Điểm vào (Entry point) của React
 ├── package.json             
 └── vite.config.js           
+>>>>>>> 80369a5 (feat: update Apple Worm snake design, fix 1v1 latency bugs, and rewrite README)
 ```
 
 ---
@@ -136,3 +174,4 @@ snake-game/
 <div align="center">
   <b>Cầm lấy phím và giành lấy kỷ lục cao nhất ngay thôi! 🥇</b>
 </div>
+

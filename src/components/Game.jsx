@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Trophy, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Trophy, RotateCcw, Volume2, VolumeX, ArrowUp, ArrowDown, ArrowRight } from 'lucide-react';
 import { playEatSound, playGameOverSound, playBGM, stopBGM } from '../utils/audio';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -132,6 +132,55 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
     }));
   }, []);
 
+  const handleDirectionInput = useCallback((newDir) => {
+    if (!newDir) return;
+    const currentPlannedDir = dirQueueRef.current.length > 0
+      ? dirQueueRef.current[dirQueueRef.current.length - 1]
+      : directionRef.current;
+
+    // Prevent 180 degree turn
+    const isOpposite = (newDir.x === -currentPlannedDir.x && newDir.x !== 0) ||
+                       (newDir.y === -currentPlannedDir.y && newDir.y !== 0);
+
+    if (!isOpposite && dirQueueRef.current.length < 3) {
+      dirQueueRef.current.push(newDir);
+    }
+  }, []);
+
+  const [touchStart, setTouchStart] = useState(null);
+
+  const handleTouchStart = (e) => {
+    setTouchStart({
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    });
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStart) return;
+
+    const touchEnd = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+
+    const dx = touchEnd.x - touchStart.x;
+    const dy = touchEnd.y - touchStart.y;
+    
+    // Ignore small movements
+    if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) handleDirectionInput({ x: 1, y: 0 }); // Right
+      else handleDirectionInput({ x: -1, y: 0 }); // Left
+    } else {
+      if (dy > 0) handleDirectionInput({ x: 0, y: 1 }); // Down
+      else handleDirectionInput({ x: 0, y: -1 }); // Up
+    }
+
+    setTouchStart(null);
+  };
+
   // Handle Input
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -153,25 +202,12 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
       if (key === 'arrowleft' || key === 'a') newDir = { x: -1, y: 0 };
       if (key === 'arrowright' || key === 'd') newDir = { x: 1, y: 0 };
 
-      if (newDir) {
-        // Determine what the current effectively planned direction is
-        const currentPlannedDir = dirQueueRef.current.length > 0
-          ? dirQueueRef.current[dirQueueRef.current.length - 1]
-          : directionRef.current;
-
-        // Prevent 180 degree turn
-        const isOpposite = (newDir.x === -currentPlannedDir.x && newDir.x !== 0) ||
-                           (newDir.y === -currentPlannedDir.y && newDir.y !== 0);
-
-        if (!isOpposite && dirQueueRef.current.length < 3) {
-          dirQueueRef.current.push(newDir);
-        }
-      }
+      handleDirectionInput(newDir);
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameOver, resetGame]);
+  }, [gameOver, resetGame, handleDirectionInput]);
 
   // 1. Game Physics / Update Loop
   useEffect(() => {
@@ -595,8 +631,10 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
       <motion.div
         animate={isShaking ? { x: [-5, 5, -5, 5, 0], y: [-3, 3, -3, 3, 0] } : {}}
         transition={{ duration: 0.2 }}
-        className="relative rounded-3xl overflow-hidden border-4 border-white shadow-card"
+        className="relative rounded-3xl overflow-hidden border-4 border-white shadow-card touch-none"
         style={{ boxShadow: '0 8px 32px rgba(76,175,80,0.25), 0 2px 8px rgba(0,0,0,0.10)' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
       >
         <canvas
           ref={canvasRef}
@@ -643,6 +681,37 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
           </motion.div>
         )}
       </motion.div>
+
+      {/* Mobile D-Pad Controls */}
+      <div className="md:hidden mt-6 grid grid-cols-3 gap-2 p-3 bg-white/40 backdrop-blur-md rounded-3xl border border-white/40 shadow-card">
+        <div />
+        <button 
+          className="bg-white/90 active:bg-gs-border/20 p-4 rounded-xl shadow-sm flex items-center justify-center border-b-4 border-gs-border active:border-b-0 active:translate-y-1 transition-all touch-manipulation"
+          onClick={(e) => { e.preventDefault(); handleDirectionInput({ x: 0, y: -1 }); }}
+        >
+          <ArrowUp className="w-8 h-8 text-gs-text" />
+        </button>
+        <div />
+        
+        <button 
+          className="bg-white/90 active:bg-gs-border/20 p-4 rounded-xl shadow-sm flex items-center justify-center border-b-4 border-gs-border active:border-b-0 active:translate-y-1 transition-all touch-manipulation"
+          onClick={(e) => { e.preventDefault(); handleDirectionInput({ x: -1, y: 0 }); }}
+        >
+          <ArrowLeft className="w-8 h-8 text-gs-text" />
+        </button>
+        <button 
+          className="bg-white/90 active:bg-gs-border/20 p-4 rounded-xl shadow-sm flex items-center justify-center border-b-4 border-gs-border active:border-b-0 active:translate-y-1 transition-all touch-manipulation"
+          onClick={(e) => { e.preventDefault(); handleDirectionInput({ x: 0, y: 1 }); }}
+        >
+          <ArrowDown className="w-8 h-8 text-gs-text" />
+        </button>
+        <button 
+          className="bg-white/90 active:bg-gs-border/20 p-4 rounded-xl shadow-sm flex items-center justify-center border-b-4 border-gs-border active:border-b-0 active:translate-y-1 transition-all touch-manipulation"
+          onClick={(e) => { e.preventDefault(); handleDirectionInput({ x: 1, y: 0 }); }}
+        >
+          <ArrowRight className="w-8 h-8 text-gs-text" />
+        </button>
+      </div>
     </motion.div>
   );
 }

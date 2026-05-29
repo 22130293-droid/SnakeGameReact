@@ -61,6 +61,8 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
   const canvasRef = useRef(null);
   const [gameOver, setGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+  const [isCountingDown, setIsCountingDown] = useState(true);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const scoreRef = useRef(0);
@@ -112,6 +114,8 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
     setScore(0);
     scoreRef.current = 0;
     setGameOver(false);
+    setCountdown(3);
+    setIsCountingDown(true);
     bulgesRef.current = [];
     scoreSavedRef.current = false;
     foodRef.current = generateFood(INITIAL_SNAKE);
@@ -139,6 +143,21 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
       r: Math.random() * Math.PI * 2
     }));
   }, []);
+
+  useEffect(() => {
+    if (!isCountingDown) return;
+
+    if (countdown <= 0) {
+      setIsCountingDown(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown(prev => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown, isCountingDown]);
 
   const handleDirectionInput = useCallback((newDir) => {
     if (!newDir) return;
@@ -225,7 +244,7 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
 
   // 1. Game Physics / Update Loop
   useEffect(() => {
-    if (gameOver || isPaused) return;
+    if (gameOver || isPaused || isCountingDown) return;
 
     const gameTick = () => {
       // Track previous state for interpolation
@@ -701,6 +720,29 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
           height={CANVAS_SIZE}
           className="block cursor-none"
           style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, maxWidth: '90vmin', maxHeight: '90vmin' }}
+
+        {/* Countdown Overlay */}
+          {isCountingDown && !gameOver && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40"
+            >
+              <motion.div
+                key={countdown}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 300,
+                  damping: 10
+                }}
+                className="text-white font-black text-8xl drop-shadow-2xl"
+              >
+                {countdown > 0 ? countdown : 'GO!'}
+              </motion.div>
+            </motion.div>
+          )}
         {/* Game Over overlay */}
         {gameOver && (
           <motion.div

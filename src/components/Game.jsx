@@ -17,6 +17,18 @@ const INITIAL_SNAKE = [
 const INITIAL_DIRECTION = { x: 0, y: -1 }; 
 const GAME_SPEED = 120; 
 
+const DIFFICULTY_CONFIG = {
+  easy:   { speed: 180, multiplier: 1 },
+  normal: { speed: 120, multiplier: 1.5 },
+  hard:   { speed: 70,  multiplier: 2.5 },
+};
+
+const DIFFICULTY_LABEL = {
+  easy:   { vi: 'DỄ', en: 'EASY',   color: '#43a047' },
+  normal: { vi: 'BÌNH THƯỜNG', en: 'NORMAL', color: '#1e88e5' },
+  hard:   { vi: 'KHÓ', en: 'HARD',   color: '#e53935' },
+}; 
+
 const MAZE_WALLS = [
   { x: 5, y: 5 }, { x: 5, y: 6 }, { x: 5, y: 7 },
   { x: 14, y: 5 }, { x: 14, y: 6 }, { x: 14, y: 7 },
@@ -55,8 +67,10 @@ const saveScoreToFirestore = async (user, score, mode) => {
   }
 };
 
-function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi', isMuted = false, onToggleMute }) {
+function Game({ mode = 'classic', difficulty = 'normal', onBack, currentUser, firebaseUser, lang = 'vi', isMuted = false, onToggleMute }) {
   const t = translations[lang];
+  const diffConfig = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.normal;
+  const diffLabel  = DIFFICULTY_LABEL[difficulty]  || DIFFICULTY_LABEL.normal;
   const canvasRef = useRef(null);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
@@ -75,7 +89,7 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
   const gameLoopRef = useRef(null);
   const lastRenderTimeRef = useRef(0);
   const lastStepTimeRef = useRef(0);
-  const speedRef = useRef(GAME_SPEED);
+  const speedRef = useRef(diffConfig.speed);
   
   const [foodType, setFoodType] = useState('normal');
   const [foodStyle, setFoodStyle] = useState({ 
@@ -113,7 +127,7 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
     bulgesRef.current = [];
     scoreSavedRef.current = false;
     foodRef.current = generateFood(INITIAL_SNAKE);
-    speedRef.current = GAME_SPEED;
+    speedRef.current = diffConfig.speed;
     setFoodType('normal');
     setIsGhost(false);
     // Reset animation refs
@@ -264,7 +278,8 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
 
       // Food Collision
       if (newHead.x === foodRef.current.x && newHead.y === foodRef.current.y) {
-        const points = foodType === 'golden' ? 50 : 10;
+        const basePoints = foodType === 'golden' ? 50 : 10;
+        const points = Math.round(basePoints * diffConfig.multiplier);
         
         if (foodType === 'ghost') {
           setIsGhost(true);
@@ -620,10 +635,14 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
         </button>
       </div>
 
-      {/* Mode label */}
+      {/* Mode + Difficulty label */}
       <div className="mb-2 flex items-center gap-2">
         <span className="text-xs font-bold bg-white/60 border border-gs-border px-3 py-1 rounded-full text-gs-text-light uppercase tracking-wide">
           {mode === 'classic' ? '🐍 Cổ điển' : mode === 'borderless' ? '🌀 Xuyên biên giới' : '🧱 Tường gạch'}
+        </span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border"
+          style={{ background: diffLabel.color + '20', color: diffLabel.color, borderColor: diffLabel.color + '60' }}>
+          {diffLabel[lang] || diffLabel.en} · x{diffConfig.multiplier}
         </span>
       </div>
 

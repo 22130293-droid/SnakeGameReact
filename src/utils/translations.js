@@ -31,6 +31,13 @@ export const translations = {
     language: 'NGÔN NGỮ',
     on: 'BẬT',
     off: 'TẮT',
+    selectDifficulty: 'CHỌN ĐỘ KHÓ',
+    easy: 'DỄ',
+    normal: 'BÌNH THƯỜNG',
+    hard: 'KHÓ',
+    easyDesc: 'Rắn chậm — điểm bình thường',
+    normalDesc: 'Tốc độ chuẩn — điểm x1.5',
+    hardDesc: 'Cực nhanh — điểm x2.5',
   },
   en: {
     title: 'SNAKE REALISTIC',
@@ -64,5 +71,12 @@ export const translations = {
     language: 'LANGUAGE',
     on: 'ON',
     off: 'OFF',
+    selectDifficulty: 'SELECT DIFFICULTY',
+    easy: 'EASY',
+    normal: 'NORMAL',
+    hard: 'HARD',
+    easyDesc: 'Slow snake — normal score',
+    normalDesc: 'Standard speed — score x1.5',
+    hardDesc: 'Blazing fast — score x2.5',
   }
 };

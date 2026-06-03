@@ -108,6 +108,7 @@ function Game({ mode = 'classic', difficulty = 'normal', onBack, firebaseUser, l
   const trailsRef = useRef([]);
   const leavesRef = useRef([]);
   const bulgesRef = useRef([]); 
+  const scorePopupsRef = useRef([]);
   const [isBiting, setIsBiting] = useState(false); // To trigger the snap animation
 
   const triggerGameOver = useCallback(() => {
@@ -137,6 +138,7 @@ function Game({ mode = 'classic', difficulty = 'normal', onBack, firebaseUser, l
     // Reset animation refs
     particlesRef.current = [];
     trailsRef.current = [];
+    scorePopupsRef.current = [];
 
     // Reset record breaking states
     const savedHighScore = localStorage.getItem(`snake_highscore_${mode}_${difficulty}`);
@@ -314,6 +316,16 @@ function Game({ mode = 'classic', difficulty = 'normal', onBack, firebaseUser, l
             }
           }
           return ns;
+        });
+
+        // Add score popup
+        scorePopupsRef.current.push({
+          x: newHead.x * CELL_SIZE + CELL_SIZE / 2,
+          y: newHead.y * CELL_SIZE,
+          text: `+${points}`,
+          color: foodType === 'golden' ? '#f1c40f' : foodType === 'ghost' ? '#a29bfe' : '#e53935',
+          life: 1.0,
+          vy: -1.0
         });
         
         // Burst particles
@@ -601,6 +613,24 @@ function Game({ mode = 'classic', difficulty = 'normal', onBack, firebaseUser, l
         // Tiny star shape
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.beginPath(); ctx.arc(p.x, p.y, 1.5 * p.life, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      });
+
+      // ── 6. SCORE POPUPS (Floating text) ───────────────────────────
+      scorePopupsRef.current = scorePopupsRef.current
+        .map(p => ({ ...p, y: p.y + p.vy, life: p.life - 0.025 }))
+        .filter(p => p.life > 0);
+      scorePopupsRef.current.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.font = '800 20px Nunito, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeText(p.text, p.x, p.y);
+        ctx.fillText(p.text, p.x, p.y);
         ctx.restore();
       });
     };

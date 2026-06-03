@@ -22,6 +22,7 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
   const [joinCode, setJoinCode] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [copied, setCopied] = useState(false);
+  const [countdown, setCountdown] = useState(null);
 
   const [gameState, setGameState] = useState({
     player1: { snake: INITIAL_SNAKE_P1, direction: { x: 1, y: 0 }, score: 0 },
@@ -80,7 +81,9 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
     setRoomStatus('matchmaking');
     const updates = {};
     updates[`rooms/${code}/player2`] = { uid: firebaseUser.uid, username: currentUser, snake: INITIAL_SNAKE_P2, direction: { x: -1, y: 0 }, score: 0, ready: true };
-    updates[`rooms/${code}/status`]  = 'playing';
+    updates[`rooms/${code}/status`] = 'countdown';
+    updates[`rooms/${code}/countdown`] = 3;
+    updates[`rooms/${code}/gameStartAt`] = Date.now() + 3000;
     updates[`rooms/${code}/lastActive`] = serverTimestamp();
     await update(ref(rtdb), updates);
     setRoomId(code); setPlayerRole('player2');
@@ -95,6 +98,10 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
     const unsub = onValue(rRef, (snap) => {
       const data = snap.val();
       if (!data) return;
+      if (data.status === 'countdown') {
+        setRoomStatus('countdown');
+        setCountdown(data.countdown);
+      }
       if (data.status === 'playing') {
         setRoomStatus('playing');
         setGameState(prev => ({ ...prev, player1: data.player1 || prev.player1, player2: data.player2 || prev.player2, food: data.food || prev.food }));
@@ -131,6 +138,43 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
     }
   }, [roomStatus, winner, playerRole, currentUser, firebaseUser, gameState]);
 
+  // __countdown timer server-sync_____________________________
+  useEffect(() => {
+  if (
+    roomStatus !== 'countdown' ||
+    playerRole !== 'player1' ||
+    !roomId
+  ) return;
+
+  const interval = setInterval(async () => {
+    const room = await get(ref(rtdb, `rooms/${roomId}`));
+
+    if (!room.exists()) return;
+
+    const data = room.val();
+
+    if (data.countdown > 1) {
+      await update(
+        ref(rtdb, `rooms/${roomId}`),
+        {
+          countdown: data.countdown - 1
+        }
+      );
+    } else {
+      await update(
+        ref(rtdb, `rooms/${roomId}`),
+        {
+          countdown: 0,
+          status: 'playing'
+        }
+      );
+    }
+  }, 1000);
+
+  return () => clearInterval(interval);
+
+}, [roomStatus, roomId, playerRole]);
+
   // ── Input ─────────────────────────────────────────────────────
   useEffect(() => {
     const down = (e) => {
@@ -161,7 +205,11 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
 
   // ── Game loop ─────────────────────────────────────────────────
   useEffect(() => {
-    if (roomStatus !== 'playing' || !playerRole || !roomId) return;
+    if (
+    roomStatus !== 'playing'
+    || !playerRole
+    || !roomId
+    ) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
@@ -333,11 +381,11 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
         <Users className="w-6 h-6 text-gs-orange" />
         <h2 className="font-nunito font-black text-2xl text-gs-text">1 VS 1 Online</h2>
         <span className={`ml-auto text-xs font-bold px-3 py-1 rounded-full ${
-          roomStatus === 'playing' ? 'bg-green-100 text-green-700' :
+          roomStatus === 'countdown' ? 'Bắt đầu': roomStatus === 'playing'? 'Đang chơi' ? 'bg-green-100 text-green-700' :
           roomStatus === 'matchmaking' ? 'bg-yellow-100 text-yellow-700' :
           'bg-gs-bg text-gs-text-light'
-        }`}>
-          {roomStatus === 'menu' ? 'Chọn phòng' : roomStatus === 'matchmaking' ? 'Chờ đối thủ...' : roomStatus === 'playing' ? '🟢 Đang chơi' : '🏁 Kết thúc'}
+        : 'bg-gs-bg text-gs-text-light'}`}>
+          {roomStatus === 'menu' ? 'Chọn phòng' : roomStatus === 'matchmaking' ? 'Chờ đối thủ...' : roomStatus === 'countdown' ? '⏳ Bắt đầu' : roomStatus === 'playing' ? '🟢 Đang chơi' : '🏁 Kết thúc'}
         </span>
       </div>
 
@@ -370,6 +418,48 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
           style={{ imageRendering: 'pixelated' }} />
 
         <AnimatePresence mode="wait">
+          {/* ── COUNTDOWN ── */}
+          {roomStatus === 'countdown' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="
+                absolute
+                inset-0
+                bg-black/40
+                flex
+                items-center
+                justify-center
+                z-50
+              "
+            >
+              <motion.div
+                key={countdown}
+                initial={{
+                  scale: 0.5,
+                  opacity: 0
+                }}
+                animate={{
+                  scale: 1,
+                  opacity: 1
+                }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 250
+                }}
+                className="
+                  text-white
+                  text-8xl
+                  font-black
+                "
+              >
+                {countdown > 0
+                  ? countdown
+                  : 'GO!'
+                }
+              </motion.div>
+            </motion.div>
+          )}
           {/* ── MENU ── */}
           {roomStatus === 'menu' && (
             <motion.div key="menu"

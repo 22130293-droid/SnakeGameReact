@@ -38,6 +38,8 @@ export const translations = {
     easyDesc: 'Rắn chậm — điểm bình thường',
     normalDesc: 'Tốc độ chuẩn — điểm x1.5',
     hardDesc: 'Cực nhanh — điểm x2.5',
+    newRecordToast: '🏆 Kỷ lục cá nhân mới!',
+    newRecordBanner: '🎉 Kỷ lục mới!',
   },
   en: {
     title: 'SNAKE REALISTIC',
@@ -78,5 +80,7 @@ export const translations = {
     easyDesc: 'Slow snake — normal score',
     normalDesc: 'Standard speed — score x1.5',
     hardDesc: 'Blazing fast — score x2.5',
+    newRecordToast: '🏆 New Personal Best!',
+    newRecordBanner: '🎉 New Record!',
   }
 };

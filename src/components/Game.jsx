@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Trophy, RotateCcw, Volume2, VolumeX, ArrowUp, ArrowDown, ArrowRight } from 'lucide-react';
-import { playEatSound, playGameOverSound, playBGM, stopBGM } from '../utils/audio';
+import { playEatSound, playGameOverSound } from '../utils/audio';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { translations } from '../utils/translations';
+import Toast from './Toast';
+
 
 const GRID_SIZE = 20;
 const CELL_SIZE = 30; 
@@ -15,7 +17,18 @@ const INITIAL_SNAKE = [
   { x: 10, y: 12 },
 ];
 const INITIAL_DIRECTION = { x: 0, y: -1 }; 
-const GAME_SPEED = 120; 
+
+const DIFFICULTY_CONFIG = {
+  easy:   { speed: 180, multiplier: 1 },
+  normal: { speed: 120, multiplier: 1.5 },
+  hard:   { speed: 70,  multiplier: 2.5 },
+};
+
+const DIFFICULTY_LABEL = {
+  easy:   { vi: 'DỄ', en: 'EASY',   color: '#43a047' },
+  normal: { vi: 'BÌNH THƯỜNG', en: 'NORMAL', color: '#1e88e5' },
+  hard:   { vi: 'KHÓ', en: 'HARD',   color: '#e53935' },
+}; 
 
 const MAZE_WALLS = [
   { x: 5, y: 5 }, { x: 5, y: 6 }, { x: 5, y: 7 },
@@ -55,16 +68,26 @@ const saveScoreToFirestore = async (user, score, mode) => {
   }
 };
 
-function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi', isMuted = false, onToggleMute }) {
+function Game({ mode = 'classic', difficulty = 'normal', onBack, firebaseUser, lang = 'vi', isMuted = false, onToggleMute }) {
   const t = translations[lang];
+  const diffConfig = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.normal;
+  const diffLabel  = DIFFICULTY_LABEL[difficulty]  || DIFFICULTY_LABEL.normal;
   const canvasRef = useRef(null);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
+  const [highScore, setHighScore] = useState(() => {
+    const savedHighScore = localStorage.getItem(`snake_highscore_${mode}_${difficulty}`);
+    return savedHighScore ? parseInt(savedHighScore, 10) : 0;
+  });
   const scoreRef = useRef(0);
   const [isShaking, setIsShaking] = useState(false);
   const scoreSavedRef = useRef(false);
   const setIsMuted = onToggleMute || (() => {}); // use parent toggle if provided
+
+  const [isNewRecord, setIsNewRecord] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const initialHighScoreRef = useRef(highScore);
+  const hasBrokenRecordRef = useRef(false);
 
   // Game state refs (to avoid dependency issues in loop)
   const snakeRef = useRef(INITIAL_SNAKE);
@@ -73,15 +96,10 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
   const dirQueueRef = useRef([]);
   const foodRef = useRef(generateFood(INITIAL_SNAKE));
   const gameLoopRef = useRef(null);
-  const lastRenderTimeRef = useRef(0);
   const lastStepTimeRef = useRef(0);
-  const speedRef = useRef(GAME_SPEED);
+  const speedRef = useRef(diffConfig.speed);
   
   const [foodType, setFoodType] = useState('normal');
-  const [foodStyle, setFoodStyle] = useState({ 
-    color: '#ff5252', 
-    pattern: 'plain' 
-  });
   const [isGhost, setIsGhost] = useState(false);
   const ghostTimerRef = useRef(null);
 
@@ -90,6 +108,7 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
   const trailsRef = useRef([]);
   const leavesRef = useRef([]);
   const bulgesRef = useRef([]); 
+  const scorePopupsRef = useRef([]);
   const [isBiting, setIsBiting] = useState(false); // To trigger the snap animation
 
   const triggerGameOver = useCallback(() => {
@@ -113,13 +132,23 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
     bulgesRef.current = [];
     scoreSavedRef.current = false;
     foodRef.current = generateFood(INITIAL_SNAKE);
-    speedRef.current = GAME_SPEED;
+    speedRef.current = diffConfig.speed;
     setFoodType('normal');
     setIsGhost(false);
     // Reset animation refs
     particlesRef.current = [];
     trailsRef.current = [];
-  }, []);
+    scorePopupsRef.current = [];
+
+    // Reset record breaking states
+    const savedHighScore = localStorage.getItem(`snake_highscore_${mode}_${difficulty}`);
+    const currentHigh = savedHighScore ? parseInt(savedHighScore, 10) : 0;
+    initialHighScoreRef.current = currentHigh;
+    setHighScore(currentHigh);
+    setIsNewRecord(false);
+    setShowToast(false);
+    hasBrokenRecordRef.current = false;
+  }, [mode, difficulty, diffConfig.speed]);
 
   // Weather init (run once)
   useEffect(() => {
@@ -264,7 +293,8 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
 
       // Food Collision
       if (newHead.x === foodRef.current.x && newHead.y === foodRef.current.y) {
-        const points = foodType === 'golden' ? 50 : 10;
+        const basePoints = foodType === 'golden' ? 50 : 10;
+        const points = Math.round(basePoints * diffConfig.multiplier);
         
         if (foodType === 'ghost') {
           setIsGhost(true);
@@ -275,8 +305,27 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
         setScore(s => {
           const ns = s + points;
           scoreRef.current = ns;
-          if (ns > highScore) setHighScore(ns);
+          if (ns > initialHighScoreRef.current) {
+            setHighScore(ns);
+            localStorage.setItem(`snake_highscore_${mode}_${difficulty}`, ns.toString());
+            
+            if (!hasBrokenRecordRef.current) {
+              hasBrokenRecordRef.current = true;
+              setIsNewRecord(true);
+              setShowToast(true);
+            }
+          }
           return ns;
+        });
+
+        // Add score popup
+        scorePopupsRef.current.push({
+          x: newHead.x * CELL_SIZE + CELL_SIZE / 2,
+          y: newHead.y * CELL_SIZE,
+          text: `+${points}`,
+          color: foodType === 'golden' ? '#f1c40f' : foodType === 'ghost' ? '#a29bfe' : '#e53935',
+          life: 1.0,
+          vy: -1.0
         });
         
         // Burst particles
@@ -292,14 +341,6 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
 
         foodRef.current = generateFood(newSnake);
         
-        // Randomize Apple Style
-        const colors = ['#ff7675', '#fdcb6e', '#a29bfe', '#e84393', '#00cec9', '#fab1a0'];
-        const patterns = ['plain', 'dots', 'stripes_h', 'stripes_v'];
-        setFoodStyle({
-          color: colors[Math.floor(Math.random() * colors.length)],
-          pattern: patterns[Math.floor(Math.random() * patterns.length)]
-        });
-
         const rand = Math.random();
         if (rand > 0.95) setFoodType('ghost');
         else if (rand > 0.85) setFoodType('golden');
@@ -325,7 +366,7 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
 
     gameLoopRef.current = setInterval(gameTick, speedRef.current);
     return () => clearInterval(gameLoopRef.current);
-  }, [gameOver, isGhost, foodType, mode, triggerGameOver]);
+  }, [gameOver, isGhost, foodType, mode, triggerGameOver, difficulty, diffConfig.multiplier]);
 
   // 2. Render Loop (using requestAnimationFrame)
   useEffect(() => {
@@ -574,6 +615,24 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
         ctx.beginPath(); ctx.arc(p.x, p.y, 1.5 * p.life, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       });
+
+      // ── 6. SCORE POPUPS (Floating text) ───────────────────────────
+      scorePopupsRef.current = scorePopupsRef.current
+        .map(p => ({ ...p, y: p.y + p.vy, life: p.life - 0.025 }))
+        .filter(p => p.life > 0);
+      scorePopupsRef.current.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.font = '800 20px Nunito, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeText(p.text, p.x, p.y);
+        ctx.fillText(p.text, p.x, p.y);
+        ctx.restore();
+      });
     };
 
     let animationFrameId;
@@ -584,7 +643,7 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
 
     animationFrameId = requestAnimationFrame(renderLoop);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [gameOver, mode, foodType, isGhost]);
+  }, [gameOver, mode, foodType, isGhost, isBiting]);
 
   return (
     <motion.div
@@ -592,6 +651,12 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
       animate={{ opacity: 1, scale: 1 }}
       className="flex flex-col items-center relative"
     >
+      <Toast 
+        message={t.newRecordToast} 
+        isVisible={showToast} 
+        onClose={() => setShowToast(false)} 
+      />
+
       {/* ── HUD: bright Google-Snake style bar ── */}
       <div className="w-full mb-3 flex items-center justify-between px-1">
         <button onClick={onBack}
@@ -620,10 +685,14 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
         </button>
       </div>
 
-      {/* Mode label */}
+      {/* Mode + Difficulty label */}
       <div className="mb-2 flex items-center gap-2">
         <span className="text-xs font-bold bg-white/60 border border-gs-border px-3 py-1 rounded-full text-gs-text-light uppercase tracking-wide">
           {mode === 'classic' ? '🐍 Cổ điển' : mode === 'borderless' ? '🌀 Xuyên biên giới' : '🧱 Tường gạch'}
+        </span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border"
+          style={{ background: diffLabel.color + '20', color: diffLabel.color, borderColor: diffLabel.color + '60' }}>
+          {diffLabel[lang] || diffLabel.en} · x{diffConfig.multiplier}
         </span>
       </div>
 
@@ -657,8 +726,10 @@ function Game({ mode = 'classic', onBack, currentUser, firebaseUser, lang = 'vi'
               transition={{ type: 'spring', damping: 12 }}
               className="flex flex-col items-center"
             >
-              <div className="text-6xl mb-3">😵</div>
-              <h2 className="font-nunito font-black text-4xl text-gs-text mb-6">{t.gameOver}</h2>
+              <div className="text-6xl mb-3">{isNewRecord ? "👑" : "😵"}</div>
+              <h2 className={`font-nunito font-black text-4xl mb-6 ${isNewRecord ? 'bg-gradient-to-r from-yellow-600 to-amber-500 bg-clip-text text-transparent drop-shadow-sm' : 'text-gs-text'}`}>
+                {isNewRecord ? t.newRecordBanner : t.gameOver}
+              </h2>
 
               <div className="flex gap-8 mb-8">
                 <div className="bg-gs-bg border-2 border-gs-border rounded-2xl px-6 py-4 text-center">

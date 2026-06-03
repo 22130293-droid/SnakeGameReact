@@ -17,6 +17,42 @@ const MODES = [
   { id: 'brick',      emoji: '🧱', color: '#fb8c00', bg: '#fff3e0', border: '#ffb74d', labelKey: 'brick',      descKey: 'brickDesc'      },
 ];
 
+const DIFFICULTIES = [
+  {
+    id: 'easy',
+    emoji: '🐣',
+    color: '#43a047',
+    bg: '#e8f5e9',
+    border: '#a5d6a7',
+    labelKey: 'easy',
+    descKey: 'easyDesc',
+    speed: 180,
+    multiplier: 1,
+  },
+  {
+    id: 'normal',
+    emoji: '👾',
+    color: '#1e88e5',
+    bg: '#e3f2fd',
+    border: '#90caf9',
+    labelKey: 'normal',
+    descKey: 'normalDesc',
+    speed: 120,
+    multiplier: 1.5,
+  },
+  {
+    id: 'hard',
+    emoji: '🔥',
+    color: '#e53935',
+    bg: '#ffebee',
+    border: '#ef9a9a',
+    labelKey: 'hard',
+    descKey: 'hardDesc',
+    speed: 70,
+    multiplier: 2.5,
+  },
+];
+
 // ─── Slide transition variants ────────────────────────────────
 const pageVariants = {
   hidden:  { opacity: 0, y: 24 },
@@ -46,6 +82,7 @@ const SnakeDeco = () => (
 function App() {
   const [activeTab, setActiveTab] = useState('loading');
   const [selectedMode, setSelectedMode] = useState('classic');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('normal');
   const [language, setLanguage] = useState('vi');
   const t = translations[language];
   const [currentUser, setCurrentUser]   = useState(null);
@@ -213,7 +250,7 @@ function App() {
               <div className="flex flex-col gap-3">
                 {MODES.map((m) => (
                   <button key={m.id}
-                    onClick={() => { setSelectedMode(m.id); setActiveTab('game'); }}
+                    onClick={() => { setSelectedMode(m.id); setActiveTab('select_difficulty'); }}
                     className="gs-mode-card flex items-center gap-4 text-left w-full"
                     style={{ borderColor: selectedMode === m.id ? m.color : undefined }}
                   >
@@ -234,11 +271,53 @@ function App() {
           </motion.div>
         )}
 
+        {/* ══════════════ SELECT DIFFICULTY ══════════════ */}
+        {activeTab === 'select_difficulty' && (
+          <motion.div key="difficulty" variants={pageVariants} initial="hidden" animate="visible" exit="exit"
+            className="z-10 w-full max-w-lg mx-4"
+          >
+            <div className="gs-card px-8 py-8">
+              <button onClick={() => setActiveTab('select_mode')} className="gs-back mb-5">
+                <ChevronLeft className="w-5 h-5" /> {t.back}
+              </button>
+              <h2 className="font-nunito font-black text-3xl text-gs-text mb-2">{t.selectDifficulty}</h2>
+              <p className="text-gs-text-light font-semibold text-sm mb-6">
+                {MODES.find(m => m.id === selectedMode)?.emoji}&nbsp;
+                {t[MODES.find(m => m.id === selectedMode)?.labelKey]}
+              </p>
+
+              <div className="flex flex-col gap-3">
+                {DIFFICULTIES.map((d) => (
+                  <button key={d.id}
+                    onClick={() => { setSelectedDifficulty(d.id); setActiveTab('game'); }}
+                    className="gs-mode-card flex items-center gap-4 text-left w-full"
+                    style={{ borderColor: selectedDifficulty === d.id ? d.color : undefined }}
+                  >
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+                      style={{ background: d.bg, border: `2px solid ${d.border}` }}>
+                      {d.emoji}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-nunito font-black text-lg" style={{ color: d.color }}>{t[d.labelKey]}</div>
+                      <div className="text-gs-text-light text-sm font-semibold">{t[d.descKey]}</div>
+                    </div>
+                    <div className="flex-shrink-0 px-2 py-1 rounded-xl text-xs font-black"
+                      style={{ background: d.bg, color: d.color }}>
+                      x{d.multiplier}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* ══════════════ GAME ══════════════ */}
         {activeTab === 'game' && (
           <motion.div key="game" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="z-10">
             <Game
               mode={selectedMode}
+              difficulty={selectedDifficulty}
               onBack={() => setActiveTab('menu')}
               onMenu={() => setActiveTab('menu')}
               currentUser={currentUser}

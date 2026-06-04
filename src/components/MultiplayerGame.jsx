@@ -14,6 +14,8 @@ const INITIAL_SNAKE_P1 = [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }];
 const INITIAL_SNAKE_P2 = [{ x: 15, y: 10 }, { x: 16, y: 10 }, { x: 17, y: 10 }];
 
 const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
+  const [isPaused, setIsPaused] = useState(false);
+  const [pausedBy, setPausedBy] = useState(null);
   const canvasRef = useRef(null);
   const [roomId, setRoomId] = useState(null);
   const [playerRole, setPlayerRole] = useState(null);
@@ -57,6 +59,8 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
       status: 'waiting',
       player1: { uid: firebaseUser.uid, username: currentUser, snake: INITIAL_SNAKE_P1, direction: { x: 1, y: 0 }, score: 0, ready: true },
       food: { x: 10, y: 5 },
+      paused:false,
+      pausedBy:null,  
       createdAt: serverTimestamp(),
       lastActive: serverTimestamp()
     });
@@ -97,34 +101,56 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
     roomRef.current = rRef;
     const unsub = onValue(rRef, (snap) => {
       const data = snap.val();
+
       if (!data) return;
+
+      setIsPaused(data.paused || false);
+      setPausedBy(data.pausedBy || null);
+
       if (data.status === 'countdown') {
         setRoomStatus('countdown');
         setCountdown(data.countdown);
       }
+
       if (data.status === 'playing') {
         setRoomStatus('playing');
-        setGameState(prev => ({ ...prev, player1: data.player1 || prev.player1, player2: data.player2 || prev.player2, food: data.food || prev.food }));
-        
-        // If we haven't initialized our local prediction refs yet, do it now
-        if (!mySnakeRef.current) {
-          mySnakeRef.current = data[playerRole]?.snake || (playerRole === 'player1' ? INITIAL_SNAKE_P1 : INITIAL_SNAKE_P2);
-          myScoreRef.current = data[playerRole]?.score || 0;
-        }
-        
-        // Always sync food from server if we didn't just eat it
-        // To keep it simple, we sync food unless we locally predict it.
-        // Actually, just update foodRef from server, it's safer if opponent ate it.
-        if (data.food && (!foodRef.current || (foodRef.current.x !== data.food.x || foodRef.current.y !== data.food.y))) {
-           foodRef.current = data.food;
-        }
+
+        setGameState(prev => ({
+          ...prev,
+          player1: data.player1 || prev.player1,
+          player2: data.player2 || prev.player2,
+          food: data.food || prev.food
+        }));
       }
-      if (data.status === 'finished') { setRoomStatus('finished'); setWinner(data.winner); }
     });
     const pRef = ref(rtdb, `rooms/${roomId}/${playerRole}/ready`);
     onDisconnect(pRef).set(false);
     return () => unsub();
   }, [roomId, playerRole]);
+
+  // ── Toggle Pause (for future use) ────────────────────────────────────────────
+  const togglePause = async () => {
+    if (
+    roomStatus !== 'playing'
+    && roomStatus !== 'countdown'
+    )
+    return;
+      if (!roomId) return;
+
+      try {
+        await update(
+          ref(rtdb, `rooms/${roomId}`),
+          {
+            paused: !isPaused,
+            pausedBy: !isPaused
+              ? playerRole
+              : null
+          }
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
   // ── Save victory ──────────────────────────────────────────────
   useEffect(() => {
@@ -203,10 +229,44 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
     return () => window.removeEventListener('keydown', down);
   }, []);
 
+
+  // ── Pause toggle on Escape ───────────────────────────────────────────────
+  useEffect(() => {
+    const handleKey = (e) => {
+
+    if (
+    e.key === 'Escape'
+    && roomStatus === 'playing'
+    ){
+    togglePause();
+    }
+
+    };
+
+    window.addEventListener(
+    'keydown',
+    handleKey
+    );
+
+    return ()=>{
+
+    window.removeEventListener(
+    'keydown',
+    handleKey
+    );
+
+    };
+
+    },[
+    roomStatus,
+    togglePause
+    ]);
+
   // ── Game loop ─────────────────────────────────────────────────
   useEffect(() => {
     if (
     roomStatus !== 'playing'
+    || isPaused
     || !playerRole
     || !roomId
     ) return;
@@ -380,13 +440,30 @@ const MultiplayerGame = ({ onBack, currentUser, firebaseUser }) => {
         <button onClick={onBack} className="gs-back"><ChevronLeft className="w-5 h-5" /></button>
         <Users className="w-6 h-6 text-gs-orange" />
         <h2 className="font-nunito font-black text-2xl text-gs-text">1 VS 1 Online</h2>
-        <span className={`ml-auto text-xs font-bold px-3 py-1 rounded-full ${
-          roomStatus === 'countdown' ? 'Bắt đầu': roomStatus === 'playing'? 'Đang chơi' ? 'bg-green-100 text-green-700' :
-          roomStatus === 'matchmaking' ? 'bg-yellow-100 text-yellow-700' :
-          'bg-gs-bg text-gs-text-light'
-        : 'bg-gs-bg text-gs-text-light'}`}>
-          {roomStatus === 'menu' ? 'Chọn phòng' : roomStatus === 'matchmaking' ? 'Chờ đối thủ...' : roomStatus === 'countdown' ? '⏳ Bắt đầu' : roomStatus === 'playing' ? '🟢 Đang chơi' : '🏁 Kết thúc'}
-        </span>
+        <span
+          className={`ml-auto text-xs font-bold px-3 py-1 rounded-full ${
+          roomStatus === 'countdown'
+          ? 'bg-blue-100 text-blue-700'
+          : roomStatus === 'playing'
+          ? 'bg-green-100 text-green-700'
+          : roomStatus === 'matchmaking'
+          ? 'bg-yellow-100 text-yellow-700'
+          : 'bg-gs-bg text-gs-text-light'
+          }`}
+          >
+
+          {
+          roomStatus === 'menu'
+          ? 'Chọn phòng'
+          : roomStatus === 'matchmaking'
+          ? 'Chờ đối thủ...'
+          : roomStatus === 'countdown'
+          ? '⏳ Bắt đầu'
+          : roomStatus === 'playing'
+          ? '🟢 Đang chơi'
+          : '🏁 Kết thúc'
+          }
+          </span>
       </div>
 
       {/* Score bar (only while playing) */}
